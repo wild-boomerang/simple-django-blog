@@ -1,0 +1,6 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    <h1>Dashboard</h1>
+    <p>Welcome to dashboard. Here you can <a href="{% url "profile_edit" %}">edit your profile</a> or <a href="{% url "password_change" %}">change your password</a>.</p>
+{% endblock %}

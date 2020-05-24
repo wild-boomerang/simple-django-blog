@@ -1,0 +1,55 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    <div class="post">
+        {% if post.published_date %}
+            <div class="date">
+                {{ post.published_date }}
+            </div>
+        {% else %}
+            <div class="top-menu">
+                <a class="btn btn-default" href="{% url 'post_publish' pk=post.pk %}">Publish</a>
+            </div>
+        {% endif %}
+        {% if user.is_authenticated %}
+            <div class="top-menu">
+                <a class="btn btn-default" href="{% url 'post_edit' pk=post.pk %}"><span class="glyphicon glyphicon-pencil"></span></a>
+                <a class="btn btn-default" href="{% url 'post_delete' pk=post.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+            </div>
+        {% endif %}
+        <h1>{{ post.title }}</h1>
+        <p>{{ post.text|linebreaksbr }}</p>
+    </div>
+
+    <div class="comment">
+        <h3>{{ comments.count }} comment{{ comments.count|pluralize }}</h3>
+{#        <a class="btn btn-default" href="{% url 'add_comment_to_post' pk=post.pk %}">Write your comment</a>#}
+        {% for comment in post.comments.all %}
+            {% if user.is_authenticated or comment.approved_comment %}
+                <div class="date">
+                    Comment {{ forloop.counter }} by <strong> {{ comment.author }}</strong> {{ comment.created_date }}
+                    {% if not comment.approved_comment %}
+                        <a class="btn btn-default" href="{% url 'comment_remove' pk=comment.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+                        <a class="btn btn-default" href="{% url 'comment_approve' pk=comment.pk %}"><span class="glyphicon glyphicon-ok"></span></a>
+                    {% endif %}
+                </div>
+                {{ comment.text|linebreaksbr }}
+            {% endif %}
+        {% empty %}
+            <p>No comments yet.</p>
+        {% endfor %}
+
+        {% if new_comment %}
+            <h3>Your comment has been successfully added!</h3>
+        {% else %}
+            <h3>Write your comment</h3>
+            <div class="user-form">
+                <form method="post" action=".">
+                {% csrf_token %}
+                {{ comment_form.as_p }}
+                <p><input type="submit" value="Add comment"></p>
+            </form>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
