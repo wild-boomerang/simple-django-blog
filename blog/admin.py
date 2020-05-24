@@ -28,12 +28,12 @@ admin.site.register(Comment, CommentAdmin)
 
 
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'date_of_birth', 'photo']
-    list_filter = ('user', 'date_of_birth', 'photo')
-    search_fields = ('user', 'date_of_birth', 'photo')
+    list_display = ['user', 'date_of_birth', ]
+    list_filter = ('user', 'date_of_birth', )
+    search_fields = ('user', 'date_of_birth', )
     # prepopulated_fields = {'slug': ('title',)}
     date_hierarchy = 'date_of_birth'
-    ordering = ['user', 'date_of_birth', 'photo']
+    ordering = ['user', 'date_of_birth', ]
 
 
 admin.site.register(Profile, ProfileAdmin)
