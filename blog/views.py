@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 # from django.contrib.auth import authenticate, login
 from django.contrib import messages
 
-from .models import Post, Comment, Profile
+from .models import Post, Comment, Profile, Likes
 from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, ProfileEditForm
 
 
@@ -23,7 +23,9 @@ def post_detail(request, pk):
         if comment_form.is_valid():
             new_comment = comment_form.save(commit=False)
             new_comment.post = post
+            new_comment.author = request.user
             new_comment.save()
+            comment_form = CommentForm()
     else:
         comment_form = CommentForm()
     return render(request, 'blog/post_detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form})
@@ -37,6 +39,7 @@ def post_new(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
+            Likes.objects.create(post=post, user=request.user)
             return redirect('post_detail', pk=post.pk)
     else:
         form = PostForm()
@@ -100,6 +103,22 @@ def comment_remove(request, pk):
 
 
 @login_required
+def comment_edit(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    post = get_object_or_404(Post, pk=comment.post.pk)
+    comments = post.approved_comments()
+    if request.method == 'POST':
+        comment_form = CommentForm(instance=comment, data=request.POST)
+        if comment_form.is_valid():
+            comment_form.save()
+            # created_data = timezone.now()
+            return redirect('post_detail', pk=comment.post.pk)
+    else:
+        comment_form = CommentForm(instance=comment)
+    return render(request, 'blog/post_detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form})
+
+
+@login_required
 def comment_approve(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
     comment.approve()
@@ -137,7 +156,7 @@ def register(request):
             new_user = user_form.save(commit=False)
             new_user.set_password(user_form.cleaned_data['password'])
             new_user.save()
-            profile = Profile.objects.create(user=new_user)
+            Profile.objects.create(user=new_user)
             return render(request, 'blog/register_done.html', {'new_user': new_user})
     else:
         user_form = UserRegistrationForm()
@@ -161,8 +180,18 @@ def profile_edit(request):
     return render(request, 'blog/profile_edit.html', {'user_form': user_form, 'profile_form': profile_form})
 
 
+@login_required
 def like_increment(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    post.like_quantity += 1
+    like = Likes.objects.get_or_create(post=post, user=request.user)[0]
+    if like.already_liked:
+        post.like_quantity -= 1
+        like.invert_like()
+    else:
+        post.like_quantity += 1
+        like.invert_like()
     post.save()
-    return redirect('post_list')
+    like.save()
+    # print(request.user.is_superuser)
+    print(request)
+    return redirect('post_list')  # todo redirect to right page

@@ -4,14 +4,14 @@
     <div class="post">
         {% if post.published_date %}
             <div class="date">
-                {{ post.published_date }}
+                <p>Published: {{ post.published_date }} by <strong> {{ post.author }}</strong></p>
             </div>
         {% else %}
             <div class="top-menu">
                 <a class="btn btn-default" href="{% url 'post_publish' pk=post.pk %}">Publish</a>
             </div>
         {% endif %}
-        {% if user.is_authenticated %}
+        {% if user == post.author or user.is_superuser %}
             <div class="top-menu">
                 <a class="btn btn-default" href="{% url 'post_edit' pk=post.pk %}"><span class="glyphicon glyphicon-pencil"></span></a>
                 <a class="btn btn-default" href="{% url 'post_delete' pk=post.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
@@ -21,20 +21,27 @@
         <p>{{ post.text|linebreaksbr }}</p>
     </div>
 
+    <div>
+        <h1><a href="{% url 'like_increment' pk=post.pk %}">{{ post.like_quantity }} like{{ post.like_quantity|pluralize }}</a></h1>
+    </div>
+
     <div class="comment">
         <h3>{{ comments.count }} comment{{ comments.count|pluralize }}</h3>
 {#        <a class="btn btn-default" href="{% url 'add_comment_to_post' pk=post.pk %}">Write your comment</a>#}
         {% for comment in post.comments.all %}
-            {% if user.is_authenticated or comment.approved_comment %}
+{#            {% if comment.approved_comment %}#}
                 <div class="date">
                     Comment {{ forloop.counter }} by <strong> {{ comment.author }}</strong> {{ comment.created_date }}
-                    {% if not comment.approved_comment %}
+                    {% if user.username == comment.author or user.is_superuser %}
                         <a class="btn btn-default" href="{% url 'comment_remove' pk=comment.pk %}"><span class="glyphicon glyphicon-remove"></span></a>
+                        <a class="btn btn-default" href="{% url 'comment_edit' pk=comment.pk %}"><span class="glyphicon glyphicon-edit"></span></a>
+                    {% endif %}
+                    {% if not comment.approved_comment and user.is_superuser %}
                         <a class="btn btn-default" href="{% url 'comment_approve' pk=comment.pk %}"><span class="glyphicon glyphicon-ok"></span></a>
                     {% endif %}
                 </div>
                 {{ comment.text|linebreaksbr }}
-            {% endif %}
+{#            {% endif %}#}
         {% empty %}
             <p>No comments yet.</p>
         {% endfor %}

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Profile
+from .models import Post, Comment, Profile, Likes
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -37,3 +37,15 @@ class ProfileAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Profile, ProfileAdmin)
+
+
+class LikesAdmin(admin.ModelAdmin):
+    list_display = ['user', 'post', 'already_liked']
+    list_filter = ('user', 'post', 'already_liked')
+    search_fields = ('user', 'date_of_birth', )
+    # prepopulated_fields = {'slug': ('title',)}
+    # date_hierarchy = 'date_of_birth'
+    ordering = ['user', 'post', ]
+
+
+admin.site.register(Likes, LikesAdmin)

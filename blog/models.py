@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 
@@ -45,3 +46,18 @@ class Profile(models.Model):
 
     def __str__(self):
         return 'Profile for user {}'.format(self.user.username)
+
+    # def like(self, post_pk):
+    #     post = get_object_or_404(Post, pk=post_pk)
+
+
+class Likes(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='like')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='like')
+    already_liked = models.BooleanField(default=False)
+
+    def invert_like(self):
+        if self.already_liked:
+            self.already_liked = False
+        else:
+            self.already_liked = True

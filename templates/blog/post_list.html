@@ -3,11 +3,11 @@
 {% block content %}
     {% for post in posts %}
         <div class="post">
-            <p class="date">Published: {{ post.published_date }}</p>
+            <p class="date">Published: {{ post.published_date }} by <strong> {{ post.author }}</strong></p>
             <h1><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h1>
             <p>{{ post.text|linebreaksbr }}</p>
             <a href="{% url 'post_detail' pk=post.pk %}">{{ post.approved_comments.count }} comment{{ post.approved_comments.count|pluralize }}</a>
-            <a href="{% url 'like_increment' pk=post.pk%}">{{ post.like_quantity }} like{{ post.like_quantity|pluralize }}</a>
+            <a href="{% url 'like_increment' pk=post.pk %}">{{ post.like_quantity }} like{{ post.like_quantity|pluralize }}</a>
         </div>
     {% endfor %}
 {% endblock %}
