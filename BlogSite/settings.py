@@ -26,7 +26,7 @@ with open('etc/secret_key.txt') as f:
     SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1', '.pythonanywhere.com']
 
@@ -131,3 +131,37 @@ LOGOUT_URL = reverse_lazy('logout')
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'fileHandler': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'my_formatter'
+        },
+        'consoleHandler': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'my_formatter',
+        },
+    },
+    'loggers': {
+        'my_logger': {
+            'handlers': ['consoleHandler', 'fileHandler'],
+            'level': 'DEBUG',
+            'propagate': True,
+        }
+    },
+    'formatters': {
+        'my_formatter': {
+            'format': '{asctime} - {module} - {process:d} - {thread:d} - {levelname} - {message}',
+            'style': '{',
+        },
+        "myFormatter": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        },
+    },
+}

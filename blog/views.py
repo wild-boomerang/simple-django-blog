@@ -4,20 +4,28 @@ from django.contrib.auth.decorators import login_required
 # from django.http import HttpResponse
 # from django.contrib.auth import authenticate, login
 from django.contrib import messages
+import logging
+import logging.config
 
+from BlogSite.settings import LOGGING
 from .models import Post, Comment, Profile, Likes
 from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, ProfileEditForm
 
 
 # Create your views here.
 def post_list(request):
+    logging.config.dictConfig(LOGGING)
+    logger = logging.getLogger("my_logger")
+    logger.info("Test logging, post_list view before ")
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
+    logger.info("Test logging, post_list view after")
     return render(request, "blog/post_list.html", {'posts': posts})
 
 
 def post_detail(request, pk):
     post = get_object_or_404(Post, pk=pk)
-    comments = post.approved_comments()
+    # comments = post.approved_comments()
+    comments = post.comments
     if request.method == 'POST':
         comment_form = CommentForm(data=request.POST)
         if comment_form.is_valid():
