@@ -1,7 +1,9 @@
+from django.contrib.auth.decorators import login_required
 from django.urls import path
 from django.conf.urls import url
 import django.contrib.auth.views
 
+from blog.views import DialogsView
 from . import views
 
 
@@ -34,6 +36,10 @@ urlpatterns = [
     url(r'^password-reset/complete/$', django.contrib.auth.views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     # register
     url(r'^register/$', views.register, name='register'),
-
     url(r'^profile_edit/$', views.profile_edit, name='profile_edit'),
+    # messages & chats
+    path('user/<int:pk>/profile/', views.user_page, name='user_page'),
+    url(r'^dialogs/$', login_required(views.DialogsView.as_view()), name='dialogs'),
+    url(r'^dialogs/create/(?P<user_id>\d+)/$', login_required(views.CreateDialogView.as_view()), name='create_dialog'),
+    url(r'^dialogs/(?P<chat_id>\d+)/$', login_required(views.MessagesView.as_view()), name='messages'),
 ]

@@ -12,6 +12,9 @@ class Post(models.Model):
     published_date = models.DateTimeField(blank=True, null=True)
     like_quantity = models.BigIntegerField(default=0)
 
+    class Meta:
+        ordering = ('-published_date', )
+
     def publish(self):
         self.published_date = timezone.now()
         self.save()
@@ -40,7 +43,7 @@ class Comment(models.Model):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     date_of_birth = models.DateField(blank=True, null=True)
     verified = models.BooleanField(default=False)
     # photo = models.ImageField(upload_to='users/%Y/%m/%d', blank=True)
@@ -62,3 +65,32 @@ class Likes(models.Model):
             self.already_liked = False
         else:
             self.already_liked = True
+
+    def __str__(self):
+        return self.already_liked
+
+
+class Chat(models.Model):
+    members = models.ManyToManyField(Profile)
+    CHAT = 'C'
+    DIALOG = 'D'
+    CHAT_TYPE_CHOICES = ((DIALOG, 'Dialog'), (CHAT, 'Chat'))
+    type = models.CharField(max_length=1, choices=CHAT_TYPE_CHOICES, default=DIALOG)
+
+    def get_absolute_url(self):
+        return 'users:messages', (), {'chat_id': self.pk}
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sender')
+    content = models.TextField()
+    departure_date = models.DateTimeField(blank=True, null=True, default=timezone.now)
+    is_read = models.BooleanField(default=False)
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='chat')
+
+    class Meta:
+        ordering = ['departure_date']
+
+    def __str__(self):
+        return self.content
+

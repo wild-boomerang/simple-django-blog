@@ -23,7 +23,9 @@ from django.contrib.auth import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    path('', include('blog.urls')),
+    # url(r'^', include(('blog.urls', 'blog'), namespace='blog')),
+    url(r'^', include('blog.urls')),
+
     # path('accounts/login/', views.LoginView.as_view(), name='login'),
     # path('accounts/logout', views.LogoutView.as_view(next_page='/'), name='logout'),
     # url(r'^blog/', include('blog.urls')),

@@ -1,0 +1,11 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    <h1>{{ user.username }}</h1>
+    <form method="post" action="." class="user-form" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ user_form.as_p }}
+        {{ profile_form.as_p }}
+    </form>
+    <a class="btn btn-default" href="{% url 'create_dialog' user.profile.pk %}">Write the message</a>
+{% endblock %}

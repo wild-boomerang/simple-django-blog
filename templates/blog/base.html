@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
+
 <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -11,7 +12,8 @@
     </head>
     <body>
         <div class="page-header">
-            {% if user.is_authenticated %}
+            {% if user.is_authenticated and not user.is_superuser %}
+                <p class="top-menu"><a href="{% url "dialogs" %}">Messages</a></p>
                 <a href="{% url 'post_new' %}" class="top-menu"><span class="glyphicon glyphicon-plus"></span></a>
                 <a href="{% url 'post_draft_list' %}" class="top-menu"><span class="glyphicon glyphicon-edit"></span></a>
                 <p class="top-menu">Hello, <a href="{% url "dashboard" %}"> {{ user.username }}</a> <small>(<a href="{% url 'logout' %}">Log out</a>)</small></p>

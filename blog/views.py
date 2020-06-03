@@ -1,4 +1,6 @@
+from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 # from django.http import HttpResponse
@@ -6,18 +8,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import logging
 import logging.config
+from django.views import View
 
 from BlogSite.settings import LOGGING
-from .models import Post, Comment, Profile, Likes
-from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, ProfileEditForm
+from .models import Post, Comment, Profile, Likes, Message, Chat
+from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, ProfileEditForm, MessageForm
 
 
-# Create your views here.
 def post_list(request):
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger("my_logger")
     logger.info("Test logging, post_list view before ")
-    posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('published_date')
+    posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('-published_date')
     logger.info("Test logging, post_list view after")
     return render(request, "blog/post_list.html", {'posts': posts})
 
@@ -203,3 +205,55 @@ def like_increment(request, pk):
     # print(request.user.is_superuser)
     print(request)
     return redirect('post_list')  # todo redirect to right page
+
+
+def user_page(request, pk):
+    user_profile = get_object_or_404(Profile, pk=pk)
+    user = user_profile.user
+    profile_form = ProfileEditForm(instance=user_profile)
+    user_form = UserEditForm(instance=user)
+    return render(request, 'blog/user_page.html', {'user': user, 'user_form': user_form,
+                                                   'profile_form': profile_form})
+
+
+class DialogsView(View):
+    def get(self, request):
+        chats = Chat.objects.filter(members__in=[request.user.id])
+        return render(request, 'blog/dialogs.html', {'user_profile': request.user, 'chats': chats})
+
+
+class MessagesView(View):
+    def get(self, request, chat_id):
+        try:
+            chat = Chat.objects.get(id=chat_id)
+            if request.user.profile in chat.members.all():
+                chat.content_set.filter(is_read=False).exclude(sender=request.user.profile).update(is_read=True)
+            else:
+                chat = None
+        except Chat.DoesNotExist:
+            chat = None
+
+        return render(request, 'blog/messages.html', {'user': request.user, 'chat': chat,
+                                                      'message_form': MessageForm()})
+
+    def post(self, request, chat_id):
+        message_form = MessageForm(data=request.POST)
+        if message_form.is_valid():
+            message = message_form.save(commit=False)
+            message.chat_id = chat_id
+            message.sender = request.user.profile
+            message.save()
+        return redirect(reverse('blog:messages', kwargs={'chat_id': chat_id}))
+
+
+class CreateDialogView(View):
+    def get(self, request, user_id):
+        chats = Chat.objects.filter(members__in=[request.user.id, user_id], type=Chat.DIALOG).annotate(c=Count('members')).filter(c=2)
+        if chats.count() == 0:
+            chat = Chat.objects.create()
+            chat.members.add(request.user.profile)
+            chat.members.add(user_id)
+        else:
+            chat = chats.first()
+        # return redirect(reverse('blog:messages', kwargs={'chat_id': chat.id}))
+        return redirect('messages', chat.id)

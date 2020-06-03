@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Profile, Likes
+from .models import Post, Comment, Profile, Likes, Message, Chat
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -49,3 +49,27 @@ class LikesAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Likes, LikesAdmin)
+
+
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['sender', 'content', 'is_read', 'departure_date', 'chat']
+    list_filter = ('sender', 'content', 'is_read', 'departure_date', 'chat')
+    search_fields = ('sender', 'content', 'is_read', 'departure_date', 'chat')
+    # prepopulated_fields = {'slug': ('title',)}
+    # date_hierarchy = 'date_of_birth'
+    ordering = ['sender', 'content', 'is_read', 'departure_date', 'chat']
+
+
+admin.site.register(Message, MessageAdmin)
+
+
+class ChatAdmin(admin.ModelAdmin):
+    list_display = ['type']
+    list_filter = ('members', 'type', )
+    search_fields = ('members', 'type', )
+    # prepopulated_fields = {'slug': ('title',)}
+    # date_hierarchy = 'date_of_birth'
+    ordering = ['members', 'type']
+
+
+admin.site.register(Chat, ChatAdmin)

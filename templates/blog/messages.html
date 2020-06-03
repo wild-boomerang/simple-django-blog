@@ -1,0 +1,27 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    {% if not chat %}
+    <div class="panel panel-body">
+        "Невозможно начать беседу. Не найден пользователь или вы не имеете доступа к данной беседе."
+    </div>
+    {% else %}
+        {% load tz %}
+        {% if chat %}
+            <div id="messages" class="panel">
+                <div id="innerMessages">
+                    {% for message in chat.message_set.all %}
+                            {% include 'blog/message.html' with message_item=message %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        <div id="message_form">
+            <form method="post" class="panel panel-body" id="message-form">
+                {% csrf_token %}
+                {{ message_form.as_p }}
+                <button type="submit" class="save btn btn-default">Save</button>
+            </form>
+        </div>
+    {% endif %}
+{% endblock %}

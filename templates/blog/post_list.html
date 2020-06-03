@@ -3,7 +3,7 @@
 {% block content %}
     {% for post in posts %}
         <div class="post">
-            <p class="date">Published: {{ post.published_date }} by <strong> {{ post.author }}</strong></p>
+            <p class="date">Published: {{ post.published_date }} by <strong><a href="{% url 'user_page' pk=post.author.profile.pk %}">{{ post.author }}</a></strong></p>
             <h1><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h1>
             <p>{{ post.text|linebreaksbr }}</p>
             <a href="{% url 'post_detail' pk=post.pk %}">{{ post.comments.count }} comment{{ post.comments.count|pluralize }}</a>
