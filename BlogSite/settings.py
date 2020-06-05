@@ -42,8 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # django-user-accounts
-    'django.contrib.sites',
-    'account',
+    # 'django.contrib.sites',
+    # 'account',
+    # django-registration
+    # 'registration',
 ]
 
 MIDDLEWARE = [
@@ -55,8 +57,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # django-user-accounts
-    'account.middleware.LocaleMiddleware',
-    'account.middleware.TimezoneMiddleware',
+    # 'account.middleware.LocaleMiddleware',
+    # 'account.middleware.TimezoneMiddleware',
 ]
 
 ROOT_URLCONF = 'BlogSite.urls'
@@ -74,7 +76,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 # django-user-accounts
-                'account.context_processors.account',
+                # 'account.context_processors.account',
             ],
         },
     },
@@ -174,6 +176,49 @@ LOGGING = {
     },
 }
 
+with open('etc/email.txt') as f:
+    EMAIL_NAME = f.readline().strip()
+    EMAIL_PASSWORD = f.readline().strip()
+
 # django-user-accounts
-ACCOUNT_EMAIL_UNIQUE = True
-ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = True
+# ACCOUNT_EMAIL_UNIQUE = True
+# ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = True
+# SITE_ID = 2
+#
+# # ACCOUNT_LOGIN_URL = 'blog:account_login'
+# # ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = ACCOUNT_LOGIN_URL
+# # ACCOUNT_PASSWORD_RESET_REDIRECT_URL = ACCOUNT_LOGIN_URL
+# # ACCOUNT_EMAIL_CONFIRMATION_URL = "blog:account_confirm_email"
+# # ACCOUNT_SETTINGS_REDIRECT_URL = 'blog:account_settings'
+# # ACCOUNT_PASSWORD_CHANGE_REDIRECT_URL = "blog:account_password"
+#
+# EMAIL_HOST = "smtp.gmail.com"
+# EMAIL_PORT = 25
+# EMAIL_HOST_USER = EMAIL_NAME
+# EMAIL_HOST_PASSWORD = EMAIL_PASSWORD
+# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+# Sending Email
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = EMAIL_NAME
+EMAIL_HOST_PASSWORD = EMAIL_PASSWORD
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+MAILER_EMAIL_BACKEND = EMAIL_BACKEND
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+# django-registration
+# ACCOUNT_ACTIVATION_DAYS = 2
+# AUTH_USER_EMAIL_UNIQUE = True
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_HOST_USER = EMAIL_NAME
+# EMAIL_HOST_PASSWORD = EMAIL_PASSWORD
+# EMAIL_USE_TLS = False
+# DEFAULT_FROM_EMAIL = 'info@google.ru'
+# EMAIL_PORT = 1025

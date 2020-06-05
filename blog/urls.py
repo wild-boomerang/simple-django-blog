@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.urls import path
+from django.urls import path, include
 from django.conf.urls import url
 import django.contrib.auth.views
 
@@ -21,6 +21,13 @@ urlpatterns = [
     path('comment/<int:pk>/approve/', views.comment_approve, name='comment_approve'),
     path('post/<int:pk>/like/', views.like_increment, name='like_increment'),
 
+
+    # django-user-accounts
+    # url(r"^account/", include("account.urls")),
+
+    path('signup/', views.signup, name="signup"),
+    path('activate/<uidb64>/<token>/', views.activate, name='activate'),
+
     # url(r'^login/$', views.user_login, name='login'),
     # url(r'^logout-then-login/$', 'django.contrib.auth.views.logout_then_login', name='logout_then_login'),
     url(r'^login/$', django.contrib.auth.views.LoginView.as_view(), name='login'),
@@ -35,7 +42,7 @@ urlpatterns = [
     url(r'^password-reset/confirm/(?P<uidb64>[-\w]+)/(?P<token>[-\w]+)/$', django.contrib.auth.views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     url(r'^password-reset/complete/$', django.contrib.auth.views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
     # register
-    url(r'^register/$', views.register, name='register'),
+    # url(r'^register/$', views.register, name='register'),
     url(r'^profile_edit/$', views.profile_edit, name='profile_edit'),
     # messages & chats
     path('user/<int:pk>/profile/', views.user_page, name='user_page'),

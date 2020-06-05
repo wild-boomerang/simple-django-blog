@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Post, Comment, Profile, Likes, Message, Chat
+from .models import Post, Comment, Profile, Likes, Message, Chat, Feedback
+from django.core.mail import send_mail, BadHeaderError
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -73,3 +74,51 @@ class ChatAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Chat, ChatAdmin)
+
+
+class EmailReply(admin.ModelAdmin):
+    list_display = ['email_reply', 'email_address', 'email_reply_capt', 'email_reply_text']
+    list_filter = ('email_reply', 'email_address', 'email_reply_capt', 'email_reply_text', )
+    search_fields = ('email_reply', 'email_address', 'email_reply_capt', 'email_reply_text', )
+    # prepopulated_fields = {'slug': ('title',)}
+    # date_hierarchy = 'date_of_birth'
+    ordering = ['email_reply', 'email_address', 'email_reply_capt', 'email_reply_text']
+
+    def save_model(self, request, obj, form, change):
+        if not obj.email_reply:
+            return
+        if not obj.email_reply_text:
+            return
+        # если для хранения e-mail используется не поле email_address, а другое - заменяем название. Если оно не
+        # строкового типа - приводим к строке
+        if not obj.email_address:
+            return
+
+        # сюда можно ещё дописать алгорит проверки, правильно ли введен e-mail
+        # впрочем, если адрес окажется некорректным, ничего не сломается. Письмо просто не будет отправлено
+
+        # список получателей (получатели не видят чужие e-mail)
+        # если нужно отправлять кому-то ещё, дописываем адреса в этот список через запятую
+        # желательно добавить свой адрес электронной почты, чтобы видеть, что вы отправили
+        recipients = [
+            obj.email_address,
+        ]
+
+        for mail in recipients:
+            try:
+                send_mail(obj.email_reply_capt, obj.email_reply_text, 'skyblogsender@gmail.com', [mail])
+            except BadHeaderError:
+                # если есть какие-либо предпочтения в обработке случаев, когда e-mail указан неправильно - описываем
+                # обработку таких случаев тут. В моём примере такие адреса просто пропускаются, сообщения отправлены
+                # не будут
+                pass
+
+        # сбрасываем поля, чтобы при следующем сохранении модели случайно не отправить письмо ещё раз
+        # поле адреса электронной почты я не сбрасываю. Вдруг пригодится ещё
+        obj.email_reply = False
+        # obj.email_reply_capt = ''
+        # obj.email_reply_text = None
+        super().save_model(request, obj, form, change)
+
+
+admin.site.register(Feedback, EmailReply)

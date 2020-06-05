@@ -1,3 +1,4 @@
+from django.core.mail import send_mail
 from django.db.models import Count
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -10,17 +11,26 @@ import logging
 import logging.config
 from django.views import View
 
+from django.http import HttpResponse
+from django.shortcuts import render
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.encoding import force_bytes, force_text
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.template.loader import render_to_string
+from django.contrib.auth.models import User
+from django.core.mail import EmailMessage
+
 from BlogSite.settings import LOGGING
 from .models import Post, Comment, Profile, Likes, Message, Chat
-from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, ProfileEditForm, MessageForm
+from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, ProfileEditForm, MessageForm, SignUpForm
+from .tokens import account_activation_token
 
 
 def post_list(request):
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger("my_logger")
-    logger.info("Test logging, post_list view before ")
+    logger.info("Test logging, post_list")
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('-published_date')
-    logger.info("Test logging, post_list view after")
     return render(request, "blog/post_list.html", {'posts': posts})
 
 
@@ -159,20 +169,6 @@ def dashboard(request):
     return render(request, 'blog/dashboard.html', {'section': 'dashboard'})
 
 
-def register(request):
-    if request.method == 'POST':
-        user_form = UserRegistrationForm(request.POST)
-        if user_form.is_valid():
-            new_user = user_form.save(commit=False)
-            new_user.set_password(user_form.cleaned_data['password'])
-            new_user.save()
-            Profile.objects.create(user=new_user)
-            return render(request, 'blog/register_done.html', {'new_user': new_user})
-    else:
-        user_form = UserRegistrationForm()
-    return render(request, 'blog/register.html', {'user_form': user_form})
-
-
 @login_required
 def profile_edit(request):
     if request.method == 'POST':
@@ -204,15 +200,15 @@ def like_increment(request, pk):
     like.save()
     # print(request.user.is_superuser)
     print(request)
-    return redirect('post_list')  # todo redirect to right page
+    return redirect('post_list')  # todo redirect to the right page
 
 
 def user_page(request, pk):
     user_profile = get_object_or_404(Profile, pk=pk)
-    user = user_profile.user
+    current_user = user_profile.user
     profile_form = ProfileEditForm(instance=user_profile)
-    user_form = UserEditForm(instance=user)
-    return render(request, 'blog/user_page.html', {'user': user, 'user_form': user_form,
+    user_form = UserEditForm(instance=current_user)
+    return render(request, 'blog/user_page.html', {'author': current_user, 'user_form': user_form,
                                                    'profile_form': profile_form})
 
 
@@ -227,7 +223,7 @@ class MessagesView(View):
         try:
             chat = Chat.objects.get(id=chat_id)
             if request.user.profile in chat.members.all():
-                chat.content_set.filter(is_read=False).exclude(sender=request.user.profile).update(is_read=True)
+                chat.set_content.filter(is_read=False).exclude(sender=request.user.profile).update(is_read=True)
             else:
                 chat = None
         except Chat.DoesNotExist:
@@ -243,7 +239,8 @@ class MessagesView(View):
             message.chat_id = chat_id
             message.sender = request.user.profile
             message.save()
-        return redirect(reverse('blog:messages', kwargs={'chat_id': chat_id}))
+        # return redirect(reverse('blog:messages', kwargs={'chat_id': chat_id}))
+        return redirect('messages', chat_id)
 
 
 class CreateDialogView(View):
@@ -257,3 +254,70 @@ class CreateDialogView(View):
             chat = chats.first()
         # return redirect(reverse('blog:messages', kwargs={'chat_id': chat.id}))
         return redirect('messages', chat.id)
+
+
+# def register(request):
+#     if request.method == 'POST':
+#         user_form = UserRegistrationForm(request.POST)
+#         if user_form.is_valid():
+#             # cd = user_form.cleaned_data
+#             new_user = user_form.save(commit=False)
+#             new_user.set_password(user_form.cleaned_data['password'])
+#             new_user.save()
+#             Profile.objects.create(user=new_user)
+#
+#             send_mail('subject', 'message', 'skyblogsender@gmail.com', [new_user.email])
+#             sent = True
+#
+#             return render(request, 'blog/register_done.html', {'new_user': new_user})
+#     else:
+#         user_form = UserRegistrationForm()
+#     return render(request, 'blog/register.html', {'user_form': user_form})
+
+
+def signup(request):
+    if request.method == 'GET':
+        return render(request, 'accounts/signup.html')
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        # print(form.errors.as_data())
+        if form.is_valid():
+            new_user = form.save(commit=False)
+            new_user.is_active = False
+            new_user.save()
+            cd = form.cleaned_data
+            Profile.objects.create(user=new_user, date_of_birth=cd['date_of_birth'])
+
+            current_site = get_current_site(request)
+            mail_subject = 'Activate your account.'
+            message = render_to_string('accounts/acc_active_email.html', {
+                'user': new_user,
+                'domain': current_site.domain,
+                'uid': urlsafe_base64_encode(force_bytes(new_user.id)),
+                'token': account_activation_token.make_token(new_user),
+            })
+            to_email = form.cleaned_data.get('email')
+            email = EmailMessage(
+                mail_subject, message, to=[to_email]
+            )
+            email.send()
+            return HttpResponse('Please confirm your email address to complete the registration')
+    else:
+        form = SignUpForm()
+    return render(request, 'accounts/signup.html', {'form': form})
+
+
+def activate(request, uidb64, token):
+    try:
+        uid = force_text(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(id=uid)
+    except(TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    if user is not None and account_activation_token.check_token(user, token):
+        user.is_active = True
+        user.profile.verified = True
+        user.save()
+        user.profile.save()
+        return HttpResponse('Thank you for your email confirmation. Now you can login your account.')
+    else:
+        return HttpResponse('Activation link is invalid!')

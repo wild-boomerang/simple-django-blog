@@ -22,8 +22,11 @@ from django.conf.urls import url
 from django.contrib.auth import views
 
 urlpatterns = [
+    # django-registration
+    # (r'^accounts/', include('registration.urls')),
     url(r'^admin/', admin.site.urls),
     # url(r'^', include(('blog.urls', 'blog'), namespace='blog')),
+    # url(r"^account/", include("account.urls")),
     url(r'^', include('blog.urls')),
 
     # path('accounts/login/', views.LoginView.as_view(), name='login'),
