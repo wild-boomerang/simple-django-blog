@@ -11,20 +11,20 @@
             {% if chat.message_set.count != 0 %}
                 {% with last_message=chat.message_set.last %}
                     {% get_companion user chat as companion %}
-                    <a class="list-group-item {% if companion == last_message.sender and not last_message.is_read %}unread{% endif %}" href="{{ chat.get_absolute_url }}">
+                    <a class="list-group-item {% if companion == last_message.sender and not last_message.is_read %}unread{% endif %}" href="{% url 'messages' chat.id %}">
                         <div class="reply-body">
                             <ul class="list-inline">
                                 <li class="drop-left-padding">
-                                    <strong class="list-group-item-heading">{{ companion.username }}</strong>
+                                    <strong class="list-group-item-heading">{{ companion.user.username }}</strong>
                                 </li>
-                                <li class="pull-right text-muted"><small>{{ last_message.pub_date|utc }}</small></li>
+                                <li class="pull-right text-muted"><small>{{ last_message.departure_date|utc }}</small></li>
                             </ul>
                             {% if companion != last_message.sender %}
                                 <div>
-                                    <div class="attached-reply-body {% if not last_message.is_read %}unread{% endif %}">{{ last_message.message|truncatechars_html:"200"|safe|striptags }}</div>
+                                    <div class="attached-reply-body {% if not last_message.is_read %}unread{% endif %}">{{ last_message.content|truncatechars_html:"200"|safe|striptags }}</div>
                                 </div>
                             {% else %}
-                                <div>{{ last_message.message|truncatechars_html:"200"|safe|striptags }}</div>
+                                <div>{{ last_message.content|truncatechars_html:"200"|safe|striptags }}</div>
                             {% endif %}
                         </div>
                     </a>

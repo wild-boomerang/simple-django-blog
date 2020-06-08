@@ -1,4 +1,5 @@
 {% extends 'blog/base.html' %}
+{% load blog_tags %}
 
 {% block content %}
     {% if not chat %}
@@ -7,6 +8,7 @@
     </div>
     {% else %}
         {% load tz %}
+        <h2>Chat with {% get_companion user chat as companion %} <a href="{% url 'user_page' companion.pk %}"> {{ companion.user.username }} </a></h2>
         {% if chat %}
             <div id="messages" class="panel">
                 <div id="innerMessages">
@@ -20,7 +22,7 @@
             <form method="post" class="panel panel-body" id="message-form">
                 {% csrf_token %}
                 {{ message_form.as_p }}
-                <button type="submit" class="save btn btn-default">Save</button>
+                <button type="submit" class="save btn btn-default">Send</button>
             </form>
         </div>
     {% endif %}

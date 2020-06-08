@@ -2,15 +2,18 @@ from django.conf import settings
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+# from django.contrib.auth.models import AnonymousUser, User
+from taggit.managers import TaggableManager
 
 
 class Post(models.Model):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    title = models.CharField(max_length=200)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True)
+    title = models.CharField(max_length=200, db_index=True)
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now)
     published_date = models.DateTimeField(blank=True, null=True)
     like_quantity = models.BigIntegerField(default=0)
+    tags = TaggableManager()
 
     class Meta:
         ordering = ('-published_date', )
@@ -27,9 +30,9 @@ class Post(models.Model):
 
 
 class Comment(models.Model):
-    post = models.ForeignKey('blog.Post', on_delete=models.CASCADE, related_name='comments')
+    post = models.ForeignKey('blog.Post', on_delete=models.CASCADE, related_name='comments', db_index=True)
     text = models.TextField()
-    author = models.CharField(max_length=200)
+    author = models.CharField(max_length=200, db_index=True)
     created_date = models.DateTimeField(default=timezone.now)
     approved_comment = models.BooleanField(default=False)
     like_quantity = models.BigIntegerField(default=0)
@@ -43,7 +46,8 @@ class Comment(models.Model):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile',
+                                db_index=True)
     date_of_birth = models.DateField(blank=True, null=True)
     verified = models.BooleanField(default=False)
     # photo = models.ImageField(upload_to='users/%Y/%m/%d', blank=True)
@@ -78,15 +82,15 @@ class Chat(models.Model):
     type = models.CharField(max_length=1, choices=CHAT_TYPE_CHOICES, default=DIALOG)
 
     def get_absolute_url(self):
-        return 'users:messages', (), {'chat_id': self.pk}
+        return 'messages', (), {'chat_id': self.pk}
 
 
 class Message(models.Model):
     sender = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sender')
-    content = models.TextField()
+    content = models.TextField('content')
     departure_date = models.DateTimeField(blank=True, null=True, default=timezone.now)
     is_read = models.BooleanField(default=False)
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='chat')
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
 
     class Meta:
         ordering = ['departure_date']
@@ -97,7 +101,6 @@ class Message(models.Model):
 
 class Feedback(models.Model):
     email_reply = models.BooleanField('Отправить ответ на e-mail')
-    email_address = models.CharField('e-mail адрес для ответа', blank=True, max_length=500)  # если email передаёт
-    # пользователь, это поле необязательно. Вместо него можно использовать то, которое уже предназначено для email
+    email_address = models.CharField('e-mail адрес для ответа', blank=True, max_length=500)
     email_reply_capt = models.CharField('Заголовок ответа на e-mail', blank=True, max_length=500)
     email_reply_text = models.TextField('Текст ответа на e-mail', null=True, blank=True)

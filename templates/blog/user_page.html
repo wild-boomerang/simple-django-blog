@@ -2,7 +2,7 @@
 
 {% block content %}
     <h1>{{ author.username }}</h1>
-    <form method="post" action="." class="user-form" enctype="multipart/form-data">
+    <form method="get" action="." enctype="multipart/form-data">
         {% csrf_token %}
         {{ user_form.as_p }}
         {{ profile_form.as_p }}

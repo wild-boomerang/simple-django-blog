@@ -1,37 +1,46 @@
-from django.core.mail import send_mail
-from django.db.models import Count
+# from django.core.mail import send_mail
+from django.db.models import Count, Prefetch
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-# from django.http import HttpResponse
-# from django.contrib.auth import authenticate, login
+from django.http import HttpResponse
+from django.contrib.auth import authenticate, login
 from django.contrib import messages
 import logging
 import logging.config
 from django.views import View
+from taggit.models import Tag
 
 from django.http import HttpResponse
-from django.shortcuts import render
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes, force_text
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.contrib.auth.models import User
 from django.core.mail import EmailMessage
+from jinja2 import Environment, FileSystemLoader
 
 from BlogSite.settings import LOGGING
 from .models import Post, Comment, Profile, Likes, Message, Chat
 from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, ProfileEditForm, MessageForm, SignUpForm
 from .tokens import account_activation_token
+from .email import send_email_multiproc
 
 
-def post_list(request):
+def post_list(request, tag_slug=None):
     logging.config.dictConfig(LOGGING)
     logger = logging.getLogger("my_logger")
     logger.info("Test logging, post_list")
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('-published_date')
-    return render(request, "blog/post_list.html", {'posts': posts})
+
+    print(tag_slug)
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        posts = posts.filter(tags__in=[tag])
+
+    return render(request, "blog/post_list.html", {'posts': posts, 'tag': tag})
 
 
 def post_detail(request, pk):
@@ -60,6 +69,7 @@ def post_new(request):
             post.author = request.user
             post.save()
             Likes.objects.create(post=post, user=request.user)
+            form.save_m2m()  # to tags will been saved
             return redirect('post_detail', pk=post.pk)
     else:
         form = PostForm()
@@ -199,7 +209,7 @@ def like_increment(request, pk):
     post.save()
     like.save()
     # print(request.user.is_superuser)
-    print(request)
+    # print(get_current_site(request))
     return redirect('post_list')  # todo redirect to the right page
 
 
@@ -214,7 +224,7 @@ def user_page(request, pk):
 
 class DialogsView(View):
     def get(self, request):
-        chats = Chat.objects.filter(members__in=[request.user.id])
+        chats = Chat.objects.filter(members__in=[request.user.profile.id])
         return render(request, 'blog/dialogs.html', {'user_profile': request.user, 'chats': chats})
 
 
@@ -223,7 +233,7 @@ class MessagesView(View):
         try:
             chat = Chat.objects.get(id=chat_id)
             if request.user.profile in chat.members.all():
-                chat.set_content.filter(is_read=False).exclude(sender=request.user.profile).update(is_read=True)
+                chat.message_set.filter(is_read=False).exclude(sender=request.user.profile).update(is_read=True)
             else:
                 chat = None
         except Chat.DoesNotExist:
@@ -245,7 +255,8 @@ class MessagesView(View):
 
 class CreateDialogView(View):
     def get(self, request, user_id):
-        chats = Chat.objects.filter(members__in=[request.user.id, user_id], type=Chat.DIALOG).annotate(c=Count('members')).filter(c=2)
+        chats = Chat.objects.filter(members__in=[request.user.profile.id, user_id], type=Chat.DIALOG).annotate(
+            c=Count('members')).filter(c=2)
         if chats.count() == 0:
             chat = Chat.objects.create()
             chat.members.add(request.user.profile)
@@ -290,18 +301,25 @@ def signup(request):
 
             current_site = get_current_site(request)
             mail_subject = 'Activate your account.'
-            message = render_to_string('accounts/acc_active_email.html', {
-                'user': new_user,
-                'domain': current_site.domain,
-                'uid': urlsafe_base64_encode(force_bytes(new_user.id)),
-                'token': account_activation_token.make_token(new_user),
-            })
+            env = Environment(loader=FileSystemLoader('templates'))
+            template = env.get_template('accounts/acc_active_email.html')
+            uid = urlsafe_base64_encode(force_bytes(new_user.id))
+            token = account_activation_token.make_token(new_user)
+            activation_link = f"http://{get_current_site(request).domain}/activate/{uid}/{token}/"
+            message = template.render(user=new_user, activation_link=activation_link)
+            # message = render_to_string('accounts/acc_active_email.html', {
+            #     'user': new_user,
+            #     'domain': current_site.domain,
+            #     'uid': urlsafe_base64_encode(force_bytes(new_user.id)),
+            #     'token': account_activation_token.make_token(new_user),
+            # })
             to_email = form.cleaned_data.get('email')
-            email = EmailMessage(
-                mail_subject, message, to=[to_email]
-            )
-            email.send()
-            return HttpResponse('Please confirm your email address to complete the registration')
+            # email = EmailMessage(
+            #     mail_subject, message, to=[to_email]
+            # )
+            # # email.send()
+            send_email_multiproc(to_email, mail_subject, message)
+            return render(request, 'accounts/signup_email_sent.html', {'new_user': new_user})
     else:
         form = SignUpForm()
     return render(request, 'accounts/signup.html', {'form': form})
@@ -318,6 +336,6 @@ def activate(request, uidb64, token):
         user.profile.verified = True
         user.save()
         user.profile.save()
-        return HttpResponse('Thank you for your email confirmation. Now you can login your account.')
+        return render(request, 'accounts/signup_confirmed.html')
     else:
         return HttpResponse('Activation link is invalid!')

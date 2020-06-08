@@ -1,0 +1,7 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    <h1>Welcome {{ new_user.first_name }}!</h1>
+    <p>Please, confirm your email address to complete the registration.</p>
+    <p><a href="{% url "post_list" %}">Go to home page.</a></p>
+{% endblock %}

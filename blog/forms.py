@@ -9,13 +9,14 @@ from django.contrib.auth.models import User
 class PostForm(forms.ModelForm):
     class Meta:
         model = Post
-        fields = ('title', 'text', )
+        fields = ('title', 'text', 'tags')
 
 
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ('text', )
+        labels = {'text': ''}
 
 
 class UserRegistrationForm(forms.ModelForm):
@@ -36,7 +37,7 @@ class UserRegistrationForm(forms.ModelForm):
 class UserEditForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'email')
+        fields = ('username', 'first_name', 'last_name', 'email')
 
 
 class ProfileEditForm(forms.ModelForm):
@@ -49,7 +50,7 @@ class MessageForm(forms.ModelForm):
     class Meta:
         model = Message
         fields = ['content']
-        labels = {'message': ""}
+        labels = {'content': ""}
 
 
 class SignUpForm(UserCreationForm):
@@ -67,6 +68,6 @@ class SignUpForm(UserCreationForm):
 
     # def clean_date_of_birth(self):
     #     cd = self.cleaned_data
-    #     if cd['date_of_birth'] > timezone.datetime(timezone.get_current_timezone()):
-    #         raise forms.ValidationError('Date of birth is invalid!.')
+    #     if timezone.datetime(cd['date_of_birth']) > timezone.datetime:
+    #         raise forms.ValidationError('Date of birth is invalid!')
     #     return cd['date_of_birth']

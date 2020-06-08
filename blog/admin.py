@@ -1,6 +1,9 @@
 from django.contrib import admin
+from django.db.models import QuerySet
+
 from .models import Post, Comment, Profile, Likes, Message, Chat, Feedback
 from django.core.mail import send_mail, BadHeaderError
+from .email import send_email_multiproc
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -77,15 +80,25 @@ admin.site.register(Chat, ChatAdmin)
 
 
 class EmailReply(admin.ModelAdmin):
-    list_display = ['email_reply', 'email_address', 'email_reply_capt', 'email_reply_text']
+    list_display = ['email_address', 'email_reply_capt', 'email_reply_text', 'email_reply']
     list_filter = ('email_reply', 'email_address', 'email_reply_capt', 'email_reply_text', )
     search_fields = ('email_reply', 'email_address', 'email_reply_capt', 'email_reply_text', )
     # prepopulated_fields = {'slug': ('title',)}
     # date_hierarchy = 'date_of_birth'
     ordering = ['email_reply', 'email_address', 'email_reply_capt', 'email_reply_text']
+    actions = ['save_model']
 
-    def save_model(self, request, obj, form, change):
+    def save_model(self, request, obj, form=None, change=None):
+        if isinstance(obj, QuerySet):
+            for o in obj.all():
+                o.email_reply = True
+                self.test(request, o, form, change)
+        else:
+            self.test(request, obj, form, change)
+
+    def test(self, request, obj, form=None, change=None):
         if not obj.email_reply:
+            super().save_model(request, obj, form, change)
             return
         if not obj.email_reply_text:
             return
@@ -106,7 +119,7 @@ class EmailReply(admin.ModelAdmin):
 
         for mail in recipients:
             try:
-                send_mail(obj.email_reply_capt, obj.email_reply_text, 'skyblogsender@gmail.com', [mail])
+                send_email_multiproc(mail, obj.email_reply_capt, obj.email_reply_text)
             except BadHeaderError:
                 # если есть какие-либо предпочтения в обработке случаев, когда e-mail указан неправильно - описываем
                 # обработку таких случаев тут. В моём примере такие адреса просто пропускаются, сообщения отправлены
