@@ -4,7 +4,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 import logging
@@ -27,18 +26,20 @@ from .forms import PostForm, CommentForm, UserRegistrationForm, UserEditForm, Pr
 from .tokens import account_activation_token
 from .email import send_email_multiproc
 
+logging.config.dictConfig(LOGGING)
+logger = logging.getLogger("my_logger")
+
 
 def post_list(request, tag_slug=None):
-    logging.config.dictConfig(LOGGING)
-    logger = logging.getLogger("my_logger")
     logger.info("Test logging, post_list")
     posts = Post.objects.filter(published_date__lte=timezone.now()).order_by('-published_date')
 
-    print(tag_slug)
     tag = None
     if tag_slug:
         tag = get_object_or_404(Tag, slug=tag_slug)
         posts = posts.filter(tags__in=[tag])
+
+    print(request.user.pk)
 
     return render(request, "blog/post_list.html", {'posts': posts, 'tag': tag})
 
@@ -85,6 +86,7 @@ def post_edit(request, pk):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
+            # form.save_m2m()  # to tags will been saved
             return redirect('post_detail', pk=post.pk)
     else:
         form = PostForm(instance=post)
@@ -128,6 +130,8 @@ def add_comment_to_post(request, pk):
 @login_required
 def comment_remove(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
+    # comment = Comment.objects.get(pk=pk)
+    # post = comment.post
     comment.delete()
     return redirect('post_detail', pk=comment.post.pk)
 
@@ -225,6 +229,7 @@ def user_page(request, pk):
 class DialogsView(View):
     def get(self, request):
         chats = Chat.objects.filter(members__in=[request.user.profile.id])
+        # chats = Chat.objects.filter(members__in=[request.user.profile.id]).order_by('-message__departure_date')  #todo
         return render(request, 'blog/dialogs.html', {'user_profile': request.user, 'chats': chats})
 
 
@@ -299,7 +304,6 @@ def signup(request):
             cd = form.cleaned_data
             Profile.objects.create(user=new_user, date_of_birth=cd['date_of_birth'])
 
-            current_site = get_current_site(request)
             mail_subject = 'Activate your account.'
             env = Environment(loader=FileSystemLoader('templates'))
             template = env.get_template('accounts/acc_active_email.html')

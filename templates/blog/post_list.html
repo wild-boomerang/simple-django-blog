@@ -14,6 +14,7 @@
                     {% endfor %}
                 </p>
             {% endif %}
+{#            todo failed when admin edit or create post because he hasn't Profile #}
             <p class="date">Published: {{ post.published_date }} by <strong><a href="{% url 'user_page' pk=post.author.profile.pk %}">{{ post.author }}</a></strong></p>
             <h1><a href="{% url 'post_detail' pk=post.pk %}">{{ post.title }}</a></h1>
             <p>{{ post.text|linebreaksbr }}</p>

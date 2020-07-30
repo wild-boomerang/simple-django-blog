@@ -1,0 +1,12 @@
+[run]
+source = 
+    blog/
+omit =
+    BlogSite/
+    blog/migrations/*
+    blog/apps.*
+    venv.*
+    blog/tests/*
+    blog/admin.py
+    blog/templatetags/*
+    blog/tests.py

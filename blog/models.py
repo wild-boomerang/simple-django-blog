@@ -7,7 +7,7 @@ from taggit.managers import TaggableManager
 
 
 class Post(models.Model):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=200, db_index=True)
     text = models.TextField()
     created_date = models.DateTimeField(default=timezone.now)
@@ -30,7 +30,7 @@ class Post(models.Model):
 
 
 class Comment(models.Model):
-    post = models.ForeignKey('blog.Post', on_delete=models.CASCADE, related_name='comments', db_index=True)
+    post = models.ForeignKey('blog.Post', on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()
     author = models.CharField(max_length=200, db_index=True)
     created_date = models.DateTimeField(default=timezone.now)
@@ -75,7 +75,7 @@ class Likes(models.Model):
 
 
 class Chat(models.Model):
-    members = models.ManyToManyField(Profile)
+    members = models.ManyToManyField(Profile, db_index=True)
     CHAT = 'C'
     DIALOG = 'D'
     CHAT_TYPE_CHOICES = ((DIALOG, 'Dialog'), (CHAT, 'Chat'))
@@ -86,11 +86,11 @@ class Chat(models.Model):
 
 
 class Message(models.Model):
-    sender = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sender')
+    sender = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sender', db_index=True)
     content = models.TextField('content')
     departure_date = models.DateTimeField(blank=True, null=True, default=timezone.now)
     is_read = models.BooleanField(default=False)
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE)
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, db_index=True)
 
     class Meta:
         ordering = ['departure_date']

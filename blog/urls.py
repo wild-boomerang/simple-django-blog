@@ -22,7 +22,6 @@ urlpatterns = [
     path('comment/<int:pk>/approve/', views.comment_approve, name='comment_approve'),
     path('post/<int:pk>/like/', views.like_increment, name='like_increment'),
 
-
     # django-user-accounts
     # url(r"^account/", include("account.urls")),
 

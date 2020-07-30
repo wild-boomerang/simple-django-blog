@@ -5,6 +5,8 @@
     <form method="post" class="post-form">
         {% csrf_token %}
         {{ form.as_p }}
+{#        {% if form.method == 'post' %}#}
+{#        todo changing 'create' to 'edit' when editing#}
         <button type="submit" class="save btn btn-default">Create</button>
     </form>
 {% endblock %}
