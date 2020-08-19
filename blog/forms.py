@@ -68,6 +68,6 @@ class SignUpForm(UserCreationForm):
 
     # def clean_date_of_birth(self):
     #     cd = self.cleaned_data
-    #     if timezone.datetime(cd['date_of_birth']) > timezone.datetime:
+    #     if timezone.datetime(cd['date_of_birth']) > timezone.datetime:  #  todo timezone.now().date()
     #         raise forms.ValidationError('Date of birth is invalid!')
     #     return cd['date_of_birth']
