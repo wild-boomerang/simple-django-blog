@@ -10,3 +10,5 @@ db.sqlite3
 etc
 htmlcov
 local_settings.py
+.coverage
+debug.log
